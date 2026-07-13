@@ -1,0 +1,77 @@
+[0m20:42:32.695311 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'start', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10ab8c590>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10c08a850>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10c08aad0>]}
+
+
+============================== 20:42:32.698317 | 927bd464-786e-4bb3-8ca6-c84554c203fb ==============================
+[0m20:42:32.698317 [info ] [MainThread]: Running with dbt=1.12.0-rc2
+[0m20:42:32.698554 [debug] [MainThread]: running dbt with arguments {'use_experimental_parser': 'False', 'introspect': 'True', 'quiet': 'False', 'debug': 'False', 'fail_fast': 'False', 'invocation_command': 'dbt init crypto_dbt', 'cache_selected_only': 'False', 'log_cache_events': 'False', 'partial_parse': 'True', 'profiles_dir': '/Users/nimishamannajames/.dbt', 'empty': 'None', 'no_print': 'None', 'target_path': 'None', 'printer_width': '80', 'use_colors': 'True', 'static_parser': 'True', 'log_format': 'default', 'warn_error_options': 'WarnErrorOptionsV2(error=[], warn=[], silence=[])', 'version_check': 'True', 'send_anonymous_usage_stats': 'True', 'log_path': 'logs', 'maximum_seed_size_mib': '1', 'warn_error': 'None', 'write_json': 'True', 'indirect_selection': 'eager'}
+[0m20:42:32.708861 [info ] [MainThread]: Creating dbt configuration folder at /Users/nimishamannajames/.dbt
+[0m20:42:32.709617 [debug] [MainThread]: Starter project path: /Volumes/404_Not_Found/Projects/crypto-pipeline/dbt_project/venv/lib/python3.14/site-packages/dbt/include/starter_project
+[0m20:42:32.712426 [info ] [MainThread]: Setting up your profile.
+[0m20:43:52.663845 [info ] [MainThread]: Profile crypto_dbt written to /Users/nimishamannajames/.dbt/profiles.yml using target's profile_template.yml and your supplied values.
+[0m20:43:52.669749 [info ] [MainThread]: Running dbt debug to validate the project...
+[0m20:43:52.670746 [info ] [MainThread]: dbt version: 1.12.0-rc2
+[0m20:43:52.671067 [info ] [MainThread]: python version: 3.14.3
+[0m20:43:52.671345 [info ] [MainThread]: python path: /Volumes/404_Not_Found/Projects/crypto-pipeline/dbt_project/venv/bin/python3.14
+[0m20:43:52.671592 [info ] [MainThread]: os info: macOS-26.5.2-arm64-arm-64bit-Mach-O
+[0m20:43:52.702321 [info ] [MainThread]: Using profiles dir at /Users/nimishamannajames/.dbt
+[0m20:43:52.702628 [info ] [MainThread]: Using profiles.yml file at /Users/nimishamannajames/.dbt/profiles.yml
+[0m20:43:52.702757 [info ] [MainThread]: Using dbt_project.yml file at /Volumes/404_Not_Found/Projects/crypto-pipeline/dbt_project/crypto_dbt/dbt_project.yml
+[0m20:43:52.703400 [info ] [MainThread]: adapter type: postgres
+[0m20:43:52.703526 [info ] [MainThread]: adapter version: 1.10.2
+[0m20:43:52.742975 [info ] [MainThread]: Configuration:
+[0m20:43:52.743151 [info ] [MainThread]:   profiles.yml file [[32mOK found and valid[0m]
+[0m20:43:52.743245 [info ] [MainThread]:   dbt_project.yml file [[32mOK found and valid[0m]
+[0m20:43:52.743326 [info ] [MainThread]: Required dependencies:
+[0m20:43:52.743475 [debug] [MainThread]: Executing "git --help"
+[0m20:43:52.761885 [debug] [MainThread]: STDOUT: "b"usage: git [-v | --version] [-h | --help] [-C <path>] [-c <name>=<value>]\n           [--exec-path[=<path>]] [--html-path] [--man-path] [--info-path]\n           [-p | --paginate | -P | --no-pager] [--no-replace-objects] [--no-lazy-fetch]\n           [--no-optional-locks] [--no-advice] [--bare] [--git-dir=<path>]\n           [--work-tree=<path>] [--namespace=<name>] [--config-env=<name>=<envvar>]\n           <command> [<args>]\n\nThese are common Git commands used in various situations:\n\nstart a working area (see also: git help tutorial)\n   clone      Clone a repository into a new directory\n   init       Create an empty Git repository or reinitialize an existing one\n\nwork on the current change (see also: git help everyday)\n   add        Add file contents to the index\n   mv         Move or rename a file, a directory, or a symlink\n   restore    Restore working tree files\n   rm         Remove files from the working tree and from the index\n\nexamine the history and state (see also: git help revisions)\n   bisect     Use binary search to find the commit that introduced a bug\n   diff       Show changes between commits, commit and working tree, etc\n   grep       Print lines matching a pattern\n   log        Show commit logs\n   show       Show various types of objects\n   status     Show the working tree status\n\ngrow, mark and tweak your common history\n   backfill   Download missing objects in a partial clone\n   branch     List, create, or delete branches\n   commit     Record changes to the repository\n   merge      Join two or more development histories together\n   rebase     Reapply commits on top of another base tip\n   reset      Reset current HEAD to the specified state\n   switch     Switch branches\n   tag        Create, list, delete or verify a tag object signed with GPG\n\ncollaborate (see also: git help workflows)\n   fetch      Download objects and refs from another repository\n   pull       Fetch from and integrate with another repository or a local branch\n   push       Update remote refs along with associated objects\n\n'git help -a' and 'git help -g' list available subcommands and some\nconcept guides. See 'git help <command>' or 'git help <concept>'\nto read about a specific subcommand or concept.\nSee 'git help git' for an overview of the system.\n""
+[0m20:43:52.762246 [debug] [MainThread]: STDERR: "b''"
+[0m20:43:52.762363 [info ] [MainThread]:  - git [[32mOK found[0m]
+
+[0m20:43:52.762479 [info ] [MainThread]: Connection:
+[0m20:43:52.762576 [info ] [MainThread]:   host: localhost
+[0m20:43:52.762650 [info ] [MainThread]:   port: 5432
+[0m20:43:52.762719 [info ] [MainThread]:   user: dataeng
+[0m20:43:52.762788 [info ] [MainThread]:   database: crypto_db
+[0m20:43:52.762852 [info ] [MainThread]:   schema: public
+[0m20:43:52.762915 [info ] [MainThread]:   connect_timeout: 10
+[0m20:43:52.762979 [info ] [MainThread]:   role: None
+[0m20:43:52.763041 [info ] [MainThread]:   search_path: None
+[0m20:43:52.763109 [info ] [MainThread]:   keepalives_idle: 0
+[0m20:43:52.763171 [info ] [MainThread]:   sslmode: None
+[0m20:43:52.763233 [info ] [MainThread]:   sslcert: None
+[0m20:43:52.763294 [info ] [MainThread]:   sslkey: None
+[0m20:43:52.763355 [info ] [MainThread]:   sslrootcert: None
+[0m20:43:52.763415 [info ] [MainThread]:   application_name: dbt
+[0m20:43:52.763475 [info ] [MainThread]:   retries: 1
+[0m20:43:52.763718 [info ] [MainThread]: Registered adapter: postgres=1.10.2
+[0m20:43:52.800668 [debug] [MainThread]: Acquiring new postgres connection 'debug'
+[0m20:43:52.818368 [debug] [MainThread]: Using postgres connection "debug"
+[0m20:43:52.818486 [debug] [MainThread]: On debug: select 1 as id
+[0m20:43:52.818565 [debug] [MainThread]: Opening a new connection, currently in state init
+[0m20:43:52.922002 [debug] [MainThread]: SQL status: SELECT 1 in 0.103 seconds
+[0m20:43:52.922434 [debug] [MainThread]: On debug: Close
+[0m20:43:52.922565 [info ] [MainThread]:   Connection test: [[32mOK connection ok[0m]
+
+[0m20:43:52.922687 [info ] [MainThread]: [32mAll checks passed![0m
+[0m20:43:52.922845 [info ] [MainThread]: Your new dbt project "crypto_dbt" was created!
+Initialized new project in /Volumes/404_Not_Found/Projects/crypto-pipeline/dbt_project/crypto_dbt/crypto_dbt
+
+For more information on how to configure the profiles.yml file,
+please consult the dbt documentation here:
+
+  https://docs.getdbt.com/docs/configure-your-profile
+
+One more thing:
+
+Need help? Don't hesitate to reach out to us via GitHub issues or on Slack:
+
+  https://community.getdbt.com/
+
+Happy modeling!
+
+[0m20:43:52.925893 [debug] [MainThread]: Resource report: {"command_name": "init", "command_success": true, "command_wall_clock_time": 80.26832, "process_in_blocks": "0", "process_kernel_time": 0.200292, "process_mem_max_rss": "129138688", "process_out_blocks": "0", "process_user_time": 0.721657}
+[0m20:43:52.926168 [debug] [MainThread]: Command `dbt init` succeeded at 20:43:52.926107 after 80.27 seconds
+[0m20:43:52.926327 [debug] [MainThread]: Connection 'debug' was properly closed.
+[0m20:43:52.926484 [debug] [MainThread]: Sending event: {'category': 'dbt', 'action': 'invocation', 'label': 'end', 'context': [<snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10bec2650>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10cf5b0b0>, <snowplow_tracker.self_describing_json.SelfDescribingJson object at 0x10c89c8d0>]}
+[0m20:43:52.926664 [debug] [MainThread]: Flushing usage events
+[0m20:43:53.779109 [debug] [MainThread]: An error was encountered while trying to flush usage events
