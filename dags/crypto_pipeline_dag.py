@@ -17,7 +17,14 @@ with DAG(
     tags=["crypto", "portfolio-project"],
 ) as dag:
 
-    check_setup = BashOperator(
-        task_id="check_setup",
-        bash_command="echo 'Airflow is wired up and can run tasks' && date",
+    install_deps = BashOperator(
+        task_id="install_deps",
+        bash_command="pip install --quiet boto3 pandas pyarrow psycopg2-binary",
     )
+
+    load_staging = BashOperator(
+        task_id="load_raw_to_staging",
+        bash_command="python /opt/airflow/dags/scripts/load_parquet_to_staging.py",
+    )
+
+    install_deps >> load_staging
