@@ -8,16 +8,11 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-COINS = ["bitcoin", "ethereum", "solana", "dogecoin", "cardano"]
+COINS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "DOGEUSDT", "ADAUSDT"]
 
 def fetch_prices():
-    url = "https://api.coingecko.com/api/v3/simple/price"
-    params = {
-        "ids": ",".join(COINS),
-        "vs_currencies": "usd",
-        "include_24hr_vol": "true",
-        "include_24hr_change": "true"
-    }
+    url = "https://api.binance.com/api/v3/ticker/24hr"
+    params = {"symbols": json.dumps(COINS, separators=(',', ':'))}    
     resp = requests.get(url, params=params, timeout=10)
     resp.raise_for_status()
     return resp.json()
@@ -28,12 +23,12 @@ def run():
         try:
             data = fetch_prices()
             timestamp = time.time()
-            for coin, values in data.items():
+            for item in data:
                 event = {
-                    "asset": coin,
-                    "price_usd": values.get("usd"),
-                    "volume_24h": values.get("usd_24h_vol"),
-                    "change_24h_pct": values.get("usd_24h_change"),
+                    "asset": item["symbol"],
+                    "price_usd": float(item["lastPrice"]),
+                    "volume_24h": float(item["quoteVolume"]),
+                    "change_24h_pct": float(item["priceChangePercent"]),
                     "event_time": timestamp
                 }
                 producer.send("crypto_prices", value=event)
@@ -41,7 +36,7 @@ def run():
             producer.flush()
         except Exception as e:
             print(f"Error fetching/sending: {e}")
-        time.sleep(10)  # CoinGecko free tier rate limit
+        time.sleep(10)
 
 if __name__ == "__main__":
     run()
