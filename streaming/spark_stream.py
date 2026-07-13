@@ -4,8 +4,7 @@ from pyspark.sql.types import StructType, StringType, DoubleType
 
 spark = SparkSession.builder \
     .appName("CryptoStreamProcessor") \
-    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1") \
-    .config("spark.sql.shuffle.partitions", "3") \
+    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3")    .config("spark.sql.shuffle.partitions", "3") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
@@ -39,12 +38,28 @@ rolling_metrics = watermarked.groupBy(
 ).agg(
     avg("price_usd").alias("avg_price"),
     stddev("price_usd").alias("volatility")
+).select(
+    col("window.start").alias("window_start"),
+    col("window.end").alias("window_end"),
+    col("asset"),
+    col("avg_price"),
+    col("volatility")
 )
+
+def write_to_postgres(batch_df, batch_id):
+    batch_df.write \
+        .format("jdbc") \
+        .option("url", "jdbc:postgresql://localhost:5432/crypto_db") \
+        .option("dbtable", "live_metrics") \
+        .option("user", "dataeng") \
+        .option("password", "dataeng123") \
+        .option("driver", "org.postgresql.Driver") \
+        .mode("append") \
+        .save()
 
 query = rolling_metrics.writeStream \
     .outputMode("update") \
-    .format("console") \
-    .option("truncate", False) \
+    .foreachBatch(write_to_postgres) \
     .start()
 
 query.awaitTermination()
