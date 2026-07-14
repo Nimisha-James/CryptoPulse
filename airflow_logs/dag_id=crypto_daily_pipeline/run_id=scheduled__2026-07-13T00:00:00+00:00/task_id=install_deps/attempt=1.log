@@ -1,0 +1,24 @@
+[2026-07-14T00:10:33.436+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-07-14T00:10:33.451+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crypto_daily_pipeline.install_deps scheduled__2026-07-13T00:00:00+00:00 [queued]>
+[2026-07-14T00:10:33.453+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crypto_daily_pipeline.install_deps scheduled__2026-07-13T00:00:00+00:00 [queued]>
+[2026-07-14T00:10:33.453+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 3
+[2026-07-14T00:10:33.457+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): install_deps> on 2026-07-13 00:00:00+00:00
+[2026-07-14T00:10:33.460+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'crypto_daily_pipeline', 'install_deps', 'scheduled__2026-07-13T00:00:00+00:00', '--job-id', '7', '--raw', '--subdir', 'DAGS_FOLDER/crypto_pipeline_dag.py', '--cfg-path', '/tmp/tmpkiyo053z']
+[2026-07-14T00:10:33.461+0000] {standard_task_runner.py:91} INFO - Job 7: Subtask install_deps
+[2026-07-14T00:10:33.461+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62 DeprecationWarning: This process (pid=3020) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2026-07-14T00:10:33.462+0000] {standard_task_runner.py:64} INFO - Started process 3021 to run task
+[2026-07-14T00:10:33.480+0000] {task_command.py:426} INFO - Running <TaskInstance: crypto_daily_pipeline.install_deps scheduled__2026-07-13T00:00:00+00:00 [running]> on host 921b10dfab45
+[2026-07-14T00:10:33.509+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='data_eng' AIRFLOW_CTX_DAG_ID='crypto_daily_pipeline' AIRFLOW_CTX_TASK_ID='install_deps' AIRFLOW_CTX_EXECUTION_DATE='2026-07-13T00:00:00+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='scheduled__2026-07-13T00:00:00+00:00'
+[2026-07-14T00:10:33.509+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-07-14T00:10:33.516+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-07-14T00:10:33.516+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', 'pip install --quiet boto3 pandas pyarrow psycopg2-binary']
+[2026-07-14T00:10:33.519+0000] {subprocess.py:86} INFO - Output:
+[2026-07-14T00:10:34.004+0000] {subprocess.py:93} INFO - 
+[2026-07-14T00:10:34.006+0000] {subprocess.py:93} INFO - [notice] A new release of pip is available: 24.2 -> 26.1.2
+[2026-07-14T00:10:34.007+0000] {subprocess.py:93} INFO - [notice] To update, run: pip install --upgrade pip
+[2026-07-14T00:10:34.031+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-07-14T00:10:34.031+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-07-14T00:10:34.040+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=crypto_daily_pipeline, task_id=install_deps, run_id=scheduled__2026-07-13T00:00:00+00:00, execution_date=20260713T000000, start_date=20260714T001033, end_date=20260714T001034
+[2026-07-14T00:10:34.069+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 0
+[2026-07-14T00:10:34.076+0000] {taskinstance.py:3503} INFO - 1 downstream tasks scheduled from follow-on schedule check
+[2026-07-14T00:10:34.077+0000] {local_task_job_runner.py:222} INFO - ::endgroup::
