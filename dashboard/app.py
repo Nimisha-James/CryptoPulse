@@ -2,13 +2,12 @@
 Crypto Market Intelligence — Live Dashboard
 Reads live_metrics (Spark output) and daily_ohlc_summary (dbt output) from Postgres.
 """
-
 import streamlit as st
 import pandas as pd
 import psycopg2
 import plotly.graph_objects as go
 from datetime import datetime
-
+from streamlit_autorefresh import st_autorefresh
 # ----------------------------------------------------------------------------
 # PAGE CONFIG
 # ----------------------------------------------------------------------------
@@ -18,7 +17,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-
+# Reruns the whole script every 5 seconds — this is what keeps the clock
+# ticking and the data fresh without any manual page refresh.
+st_autorefresh(interval=5000, key="auto_refresh_tick")
 # ----------------------------------------------------------------------------
 # DESIGN TOKENS — dark trading-terminal aesthetic
 # ----------------------------------------------------------------------------
@@ -32,18 +33,15 @@ ACCENT_CYAN  = "#4FD1E8"
 ACCENT_GREEN = "#00E5A0"
 ACCENT_RED   = "#FF5470"
 ACCENT_AMBER = "#FFB454"
-
 # ----------------------------------------------------------------------------
 # GLOBAL CSS
 # ----------------------------------------------------------------------------
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500&display=swap');
-
 html, body, [class*="css"] {{
     font-family: 'Inter', sans-serif;
 }}
-
 .stApp {{
     background:
         radial-gradient(circle at 15% 0%, rgba(79,209,232,0.06) 0%, transparent 40%),
@@ -51,23 +49,18 @@ html, body, [class*="css"] {{
         linear-gradient(180deg, {BG_PRIMARY} 0%, #0C1119 100%);
     color: {TEXT_PRIMARY};
 }}
-
 #MainMenu, footer, header {{visibility: hidden;}}
-
 .block-container {{
     padding-top: 1.5rem;
     padding-bottom: 3rem;
     max-width: 1400px;
 }}
-
 /* ---------- Header ---------- */
 .dash-header {{
     display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    border-bottom: 1px solid {BORDER};
-    padding-bottom: 1.1rem;
-    margin-bottom: 0.6rem;
+    align-items: center;
+    margin-top: -5px;
+    height: 40px;
 }}
 .dash-title {{
     font-family: 'Space Grotesk', sans-serif;
@@ -76,40 +69,44 @@ html, body, [class*="css"] {{
     letter-spacing: 0.02em;
     margin: 0;
     color: {TEXT_PRIMARY};
+    line-height: 40px;
 }}
 .dash-title span {{ color: {ACCENT_CYAN}; }}
-.dash-sub {{
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    color: {TEXT_MUTED};
-    letter-spacing: 0.04em;
-    margin-top: 0.15rem;
-}}
+
+/* live-pill and the refresh button share this exact height, so their
+   tops/bottoms line up regardless of how each element sizes its own content */
 .live-pill {{
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 0.5rem;
+    height: 38px;
+    min-height: 38px;
+    max-height: 38px;
+    box-sizing: border-box;
     background: {BG_PANEL};
     border: 1px solid {BORDER};
     border-radius: 999px;
-    padding: 0.4rem 0.9rem;
+    padding: 0 0.9rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.75rem;
+    line-height: 1;
     color: {ACCENT_GREEN};
     letter-spacing: 0.08em;
+    white-space: nowrap;
 }}
 .pulse-dot {{
     width: 8px; height: 8px; border-radius: 50%;
     background: {ACCENT_GREEN};
     box-shadow: 0 0 0 0 rgba(0,229,160,0.6);
     animation: pulse 1.8s infinite;
+    flex-shrink: 0;
 }}
 @keyframes pulse {{
     0%   {{ box-shadow: 0 0 0 0 rgba(0,229,160,0.55); }}
     70%  {{ box-shadow: 0 0 0 8px rgba(0,229,160,0); }}
     100% {{ box-shadow: 0 0 0 0 rgba(0,229,160,0); }}
 }}
-
 /* ---------- Status indicator colors (reused on asset cards) ---------- */
 .vol-up   {{ color: {ACCENT_GREEN}; }}
 .vol-down {{ color: {ACCENT_RED}; }}
@@ -121,7 +118,6 @@ html, body, [class*="css"] {{
 }}
 .vol-dot.up   {{ background: {ACCENT_GREEN}; }}
 .vol-dot.down {{ background: {ACCENT_RED}; box-shadow: 0 0 6px {ACCENT_RED}66; }}
-
 /* ---------- Section labels ---------- */
 .section-label {{
     font-family: 'JetBrains Mono', monospace;
@@ -140,7 +136,6 @@ html, body, [class*="css"] {{
     height: 1px;
     background: {BORDER};
 }}
-
 /* ---------- Asset cards ---------- */
 .asset-card {{
     background: {BG_PANEL};
@@ -173,14 +168,12 @@ html, body, [class*="css"] {{
     color: {TEXT_MUTED};
 }}
 .asset-vol b {{ font-weight: 600; }}
-
 /* ---------- Dataframe polish ---------- */
 [data-testid="stDataFrame"] {{
     border: 1px solid {BORDER};
     border-radius: 8px;
     overflow: hidden;
 }}
-
 .footer-note {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
@@ -189,9 +182,67 @@ html, body, [class*="css"] {{
     margin-top: 2.5rem;
     letter-spacing: 0.04em;
 }}
+/* ---------- Refresh button (native Streamlit button, restyled) ----------
+   Streamlit's buttons use baseweb under the hood, which sets its own
+   height/padding with strong specificity — everything here is !important
+   to guarantee it actually matches .live-pill's box exactly. */
+div[data-testid="stButton"] {{
+    margin-top: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    height: 38px !important;
+}}
+div[data-testid="stButton"] > button {{
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    box-sizing: border-box !important;
+    background: {BG_PANEL} !important;
+    border: 1px solid {BORDER} !important;
+    border-radius: 999px !important;
+    color: {ACCENT_CYAN} !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 3rem !important;
+    line-height: 1 !important;
+    letter-spacing: 0.04em;
+    padding: 0 1rem !important;
+    margin-top: 1rem;
+    transition: border-color 0.2s ease, color 0.2s ease;
+}}
+div[data-testid="stButton"] > button p {{
+    font-size: 0.75rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}}
+div[data-testid="stButton"] > button:hover {{
+    border-color: {ACCENT_CYAN} !important;
+    color: {ACCENT_CYAN} !important;
+}}
+div[data-testid="stButton"] > button:active {{
+    color: {ACCENT_GREEN} !important;
+}}
+/* Column holding the button gets the same fixed height, so nothing
+   inside it (default Streamlit widget spacing, etc.) can push it taller. */
+div[data-testid="column"]:has(div[data-testid="stButton"]) {{
+    display: flex !important;
+    align-items: center !important;
+    height: 38px !important;
+}}
+/* Force the whole header row (title block + pill + button) onto one
+   vertically-centered baseline, no matter what Streamlit's own column
+   wrapper spacing does. */
+div[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) {{
+    align-items: center !important;
+}}
+div[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) > div {{
+    display: flex !important;
+    align-items: center !important;
+}}
 </style>
 """, unsafe_allow_html=True)
-
 # ----------------------------------------------------------------------------
 # DB CONNECTION
 # ----------------------------------------------------------------------------
@@ -201,7 +252,6 @@ def get_connection():
         host="localhost", port=5432,
         dbname="crypto_db", user="dataeng", password="dataeng123"
     )
-
 @st.cache_data(ttl=10)
 def load_latest_metrics():
     conn = get_connection()
@@ -212,7 +262,6 @@ def load_latest_metrics():
         ORDER BY asset, window_start DESC, window_end DESC;
     """
     return pd.read_sql(query, conn)
-
 @st.cache_data(ttl=10)
 def load_recent_series(asset, limit=40):
     conn = get_connection()
@@ -220,11 +269,11 @@ def load_recent_series(asset, limit=40):
         SELECT window_start, avg_price
         FROM live_metrics
         WHERE asset = %s
-        ORDER BY window_start ASC
+        ORDER BY window_start DESC
         LIMIT %s;
     """
-    return pd.read_sql(query, conn, params=(asset, limit))
-
+    df = pd.read_sql(query, conn, params=(asset, limit))
+    return df.sort_values("window_start")
 @st.cache_data(ttl=300)
 def load_daily_summary():
     conn = get_connection()
@@ -235,20 +284,38 @@ def load_daily_summary():
         ORDER BY event_date DESC, asset_id ASC;
     """
     return pd.read_sql(query, conn)
-
 # ----------------------------------------------------------------------------
 # HEADER
 # ----------------------------------------------------------------------------
-st.markdown(f"""
-<div class="dash-header">
-    <div>
-        <div class="dash-title">◈ CRYPTO<span>MARKET</span>INTEL</div>
-        <div class="dash-sub">REAL-TIME PIPELINE · KAFKA → SPARK → dbt → POSTGRES</div>
-    </div>
-    <div class="live-pill"><span class="pulse-dot"></span> LIVE · {datetime.now().strftime('%H:%M:%S')}</div>
-</div>
-""", unsafe_allow_html=True)
+header_col, pill_col, button_col = st.columns([8, 1.5, 1])
 
+with header_col:
+    st.markdown(f"""
+    <div class="dash-header">
+        <div class="dash-title">◈ CRYPTO<span>MARKET</span>INTEL</div>
+    </div>
+    """, unsafe_allow_html=True)
+with pill_col:
+    st.markdown(f"""
+    <div class="live-pill">
+        <span class="pulse-dot"></span>
+        LIVE · {datetime.now().strftime('%H:%M:%S')}
+    </div>
+    """, unsafe_allow_html=True)
+with button_col:
+    if st.button("⟳ Refresh", use_container_width=True):
+        st.cache_data.clear()
+        st.rerun()
+st.markdown(f"""
+    <hr style="
+        border: none;
+        border-top: 1px solid {BORDER};
+        margin-top: 15px;
+        margin-bottom: 15px;
+    ">
+    """,
+    unsafe_allow_html=True
+)
 # ----------------------------------------------------------------------------
 # LOAD DATA (with graceful failure)
 # ----------------------------------------------------------------------------
@@ -259,9 +326,7 @@ try:
 except Exception as e:
     data_ok = False
     st.error(f"Could not reach the database. Is Postgres running? ({e})")
-
 if data_ok and not latest.empty:
-
     # ---------------- Live asset cards ----------------
     st.markdown('<div class="section-label">LIVE · 5-MIN ROLLING METRICS</div>', unsafe_allow_html=True)
     cols = st.columns(len(latest))
@@ -280,7 +345,6 @@ if data_ok and not latest.empty:
                 <div class="asset-vol">VOLATILITY&nbsp;<b class="{vol_class}">{vol_display}</b></div>
             </div>
             """, unsafe_allow_html=True)
-
     # ---------------- Sparkline charts ----------------
     st.markdown('<div class="section-label">PRICE TREND · LAST WINDOWS</div>', unsafe_allow_html=True)
     chart_cols = st.columns(len(latest))
@@ -288,8 +352,6 @@ if data_ok and not latest.empty:
         with chart_cols[i]:
             series = load_recent_series(row["asset"])
             fig = go.Figure()
-            # invisible baseline pinned at the series' own minimum —
-            # this is what "tonexty" fills against, instead of filling to zero
             fig.add_trace(go.Scatter(
                 x=series["window_start"],
                 y=[series["avg_price"].min()] * len(series),
@@ -310,7 +372,6 @@ if data_ok and not latest.empty:
                 showlegend=False,
             )
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
     # ---------------- Daily OHLC summary ----------------
     st.markdown('<div class="section-label">HISTORICAL · DAILY OHLC (dbt)</div>', unsafe_allow_html=True)
     if not daily.empty:
@@ -326,14 +387,5 @@ if data_ok and not latest.empty:
         )
     else:
         st.info("No daily summary yet — the Airflow + dbt pipeline hasn't completed a run.")
-
-    st.markdown(f"""
-    <div class="footer-note">
-        LIVE_METRICS ← SPARK STRUCTURED STREAMING &nbsp;|&nbsp;
-        DAILY_OHLC_SUMMARY ← AIRFLOW + DBT &nbsp;|&nbsp;
-        AUTO-REFRESH EVERY 10s ON RERUN
-    </div>
-    """, unsafe_allow_html=True)
-
 elif data_ok and latest.empty:
     st.warning("Connected to Postgres, but `live_metrics` is empty. Make sure the producer and Spark job are running.")
