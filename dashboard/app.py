@@ -8,6 +8,12 @@ import psycopg2
 import plotly.graph_objects as go
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+import os
+from zoneinfo import ZoneInfo
+
+LOCAL_TZ = ZoneInfo("Asia/Kolkata")
+
+POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
 # ----------------------------------------------------------------------------
 # PAGE CONFIG
 # ----------------------------------------------------------------------------
@@ -17,11 +23,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="collapsed",
 )
-# Reruns the whole script every 5 seconds — this is what keeps the clock
-# ticking and the data fresh without any manual page refresh.
 st_autorefresh(interval=5000, key="auto_refresh_tick")
 # ----------------------------------------------------------------------------
-# DESIGN TOKENS — dark trading-terminal aesthetic
+# DESIGN TOKENS
 # ----------------------------------------------------------------------------
 BG_PRIMARY   = "#0A0E14"
 BG_PANEL     = "#10151C"
@@ -55,7 +59,6 @@ html, body, [class*="css"] {{
     padding-bottom: 3rem;
     max-width: 1400px;
 }}
-/* ---------- Header ---------- */
 .dash-header {{
     display: flex;
     align-items: center;
@@ -72,9 +75,6 @@ html, body, [class*="css"] {{
     line-height: 40px;
 }}
 .dash-title span {{ color: {ACCENT_CYAN}; }}
-
-/* live-pill and the refresh button share this exact height, so their
-   tops/bottoms line up regardless of how each element sizes its own content */
 .live-pill {{
     display: flex;
     align-items: center;
@@ -107,7 +107,6 @@ html, body, [class*="css"] {{
     70%  {{ box-shadow: 0 0 0 8px rgba(0,229,160,0); }}
     100% {{ box-shadow: 0 0 0 0 rgba(0,229,160,0); }}
 }}
-/* ---------- Status indicator colors (reused on asset cards) ---------- */
 .vol-up   {{ color: {ACCENT_GREEN}; }}
 .vol-down {{ color: {ACCENT_RED}; }}
 .vol-dot {{
@@ -118,7 +117,6 @@ html, body, [class*="css"] {{
 }}
 .vol-dot.up   {{ background: {ACCENT_GREEN}; }}
 .vol-dot.down {{ background: {ACCENT_RED}; box-shadow: 0 0 6px {ACCENT_RED}66; }}
-/* ---------- Section labels ---------- */
 .section-label {{
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.72rem;
@@ -136,7 +134,6 @@ html, body, [class*="css"] {{
     height: 1px;
     background: {BORDER};
 }}
-/* ---------- Asset cards ---------- */
 .asset-card {{
     background: {BG_PANEL};
     border: 1px solid {BORDER};
@@ -168,7 +165,6 @@ html, body, [class*="css"] {{
     color: {TEXT_MUTED};
 }}
 .asset-vol b {{ font-weight: 600; }}
-/* ---------- Dataframe polish ---------- */
 [data-testid="stDataFrame"] {{
     border: 1px solid {BORDER};
     border-radius: 8px;
@@ -182,10 +178,6 @@ html, body, [class*="css"] {{
     margin-top: 2.5rem;
     letter-spacing: 0.04em;
 }}
-/* ---------- Refresh button (native Streamlit button, restyled) ----------
-   Streamlit's buttons use baseweb under the hood, which sets its own
-   height/padding with strong specificity — everything here is !important
-   to guarantee it actually matches .live-pill's box exactly. */
 div[data-testid="stButton"] {{
     margin-top: 0 !important;
     display: flex !important;
@@ -205,11 +197,10 @@ div[data-testid="stButton"] > button {{
     border-radius: 999px !important;
     color: {ACCENT_CYAN} !important;
     font-family: 'JetBrains Mono', monospace !important;
-    font-size: 3rem !important;
+    font-size: 0.75rem !important;
     line-height: 1 !important;
     letter-spacing: 0.04em;
     padding: 0 1rem !important;
-    margin-top: 1rem;
     transition: border-color 0.2s ease, color 0.2s ease;
 }}
 div[data-testid="stButton"] > button p {{
@@ -224,16 +215,11 @@ div[data-testid="stButton"] > button:hover {{
 div[data-testid="stButton"] > button:active {{
     color: {ACCENT_GREEN} !important;
 }}
-/* Column holding the button gets the same fixed height, so nothing
-   inside it (default Streamlit widget spacing, etc.) can push it taller. */
 div[data-testid="column"]:has(div[data-testid="stButton"]) {{
     display: flex !important;
     align-items: center !important;
     height: 38px !important;
 }}
-/* Force the whole header row (title block + pill + button) onto one
-   vertically-centered baseline, no matter what Streamlit's own column
-   wrapper spacing does. */
 div[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) {{
     align-items: center !important;
 }}
@@ -248,10 +234,12 @@ div[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) > div {{
 # ----------------------------------------------------------------------------
 @st.cache_resource
 def get_connection():
-    return psycopg2.connect(
-        host="localhost", port=5432,
+    conn = psycopg2.connect(
+        host=POSTGRES_HOST, port=5432,
         dbname="crypto_db", user="dataeng", password="dataeng123"
     )
+    conn.autocommit = True
+    return conn
 @st.cache_data(ttl=10)
 def load_latest_metrics():
     conn = get_connection()
@@ -288,7 +276,6 @@ def load_daily_summary():
 # HEADER
 # ----------------------------------------------------------------------------
 header_col, pill_col, button_col = st.columns([8, 1.5, 1])
-
 with header_col:
     st.markdown(f"""
     <div class="dash-header">
@@ -299,7 +286,7 @@ with pill_col:
     st.markdown(f"""
     <div class="live-pill">
         <span class="pulse-dot"></span>
-        LIVE · {datetime.now().strftime('%H:%M:%S')}
+        LIVE · {datetime.now(LOCAL_TZ).strftime('%H:%M:%S')}
     </div>
     """, unsafe_allow_html=True)
 with button_col:
@@ -317,7 +304,7 @@ st.markdown(f"""
     unsafe_allow_html=True
 )
 # ----------------------------------------------------------------------------
-# LOAD DATA (with graceful failure)
+# LOAD DATA
 # ----------------------------------------------------------------------------
 try:
     latest = load_latest_metrics()
@@ -325,16 +312,16 @@ try:
     data_ok = True
 except Exception as e:
     data_ok = False
-    st.error(f"Could not reach the database. Is Postgres running? ({e})")
+    get_connection.clear()  # drop the poisoned connection; next rerun reconnects fresh
+    st.error(f"Could not reach the database — reconnecting automatically. ({e})")
 if data_ok and not latest.empty:
-    # ---------------- Live asset cards ----------------
     st.markdown('<div class="section-label">LIVE · 5-MIN ROLLING METRICS</div>', unsafe_allow_html=True)
     cols = st.columns(len(latest))
     for i, (_, row) in enumerate(latest.iterrows()):
         with cols[i]:
             vol = row["volatility"] if pd.notna(row["volatility"]) else 0
             vol_display = f"{vol:.5f}" if pd.notna(row["volatility"]) else "—"
-            state = "up" if vol == 0 else "down"       # up = calm/flat, down = moving
+            state = "up" if vol == 0 else "down"
             vol_class = "vol-up" if state == "up" else "vol-down"
             st.markdown(f"""
             <div class="asset-card">
@@ -345,7 +332,6 @@ if data_ok and not latest.empty:
                 <div class="asset-vol">VOLATILITY&nbsp;<b class="{vol_class}">{vol_display}</b></div>
             </div>
             """, unsafe_allow_html=True)
-    # ---------------- Sparkline charts ----------------
     st.markdown('<div class="section-label">PRICE TREND · LAST WINDOWS</div>', unsafe_allow_html=True)
     chart_cols = st.columns(len(latest))
     for i, (_, row) in enumerate(latest.iterrows()):
@@ -372,7 +358,6 @@ if data_ok and not latest.empty:
                 showlegend=False,
             )
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-    # ---------------- Daily OHLC summary ----------------
     st.markdown('<div class="section-label">HISTORICAL · DAILY OHLC (dbt)</div>', unsafe_allow_html=True)
     if not daily.empty:
         styled = daily.copy()

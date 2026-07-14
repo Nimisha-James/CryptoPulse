@@ -5,11 +5,22 @@ from kafka import KafkaConsumer
 from io import BytesIO
 from datetime import datetime
 
+import os
+KAFKA_HOST = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
+MINIO_ENDPOINT = os.environ.get("MINIO_ENDPOINT", "http://localhost:9000")
+
 s3 = boto3.client(
     "s3",
-    endpoint_url="http://localhost:9000",
+    endpoint_url=MINIO_ENDPOINT,
     aws_access_key_id="minioadmin",
     aws_secret_access_key="minioadmin123"
+)
+
+consumer = KafkaConsumer(
+    "crypto_prices",
+    bootstrap_servers=KAFKA_HOST,
+    value_deserializer=lambda v: json.loads(v.decode("utf-8")),
+    auto_offset_reset="earliest"
 )
 
 BUCKET = "crypto-raw"
@@ -17,13 +28,6 @@ BUCKET = "crypto-raw"
 existing = [b["Name"] for b in s3.list_buckets().get("Buckets", [])]
 if BUCKET not in existing:
     s3.create_bucket(Bucket=BUCKET)
-
-consumer = KafkaConsumer(
-    "crypto_prices",
-    bootstrap_servers="localhost:9092",
-    value_deserializer=lambda v: json.loads(v.decode("utf-8")),
-    auto_offset_reset="earliest"
-)
 
 buffer = []
 BATCH_SIZE = 5

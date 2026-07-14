@@ -1,10 +1,15 @@
+import os
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import from_json, col, window, avg, stddev, to_timestamp
 from pyspark.sql.types import StructType, StringType, DoubleType
 
+KAFKA_HOST = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
+POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+
 spark = SparkSession.builder \
     .appName("CryptoStreamProcessor") \
-    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3")    .config("spark.sql.shuffle.partitions", "3") \
+    .config("spark.jars.packages", "org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.1,org.postgresql:postgresql:42.7.3") \
+    .config("spark.sql.shuffle.partitions", "3") \
     .getOrCreate()
 
 spark.sparkContext.setLogLevel("WARN")
@@ -18,7 +23,7 @@ schema = StructType() \
 
 raw_stream = spark.readStream \
     .format("kafka") \
-    .option("kafka.bootstrap.servers", "localhost:9092") \
+    .option("kafka.bootstrap.servers", KAFKA_HOST) \
     .option("subscribe", "crypto_prices") \
     .option("startingOffsets", "latest") \
     .load()
@@ -49,7 +54,7 @@ rolling_metrics = watermarked.groupBy(
 def write_to_postgres(batch_df, batch_id):
     batch_df.write \
         .format("jdbc") \
-        .option("url", "jdbc:postgresql://localhost:5432/crypto_db") \
+        .option("url", f"jdbc:postgresql://{POSTGRES_HOST}:5432/crypto_db") \
         .option("dbtable", "live_metrics") \
         .option("user", "dataeng") \
         .option("password", "dataeng123") \

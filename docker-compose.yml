@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
@@ -15,10 +13,16 @@ services:
       - zookeeper
     ports:
       - "9092:9092"
+      - "29092:29092"
     environment:
       KAFKA_BROKER_ID: 1
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
+      # Two listeners: one for other containers (kafka:29092), one for
+      # your Mac's host processes if you ever run something bare again (localhost:9092).
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:29092,PLAINTEXT_HOST://0.0.0.0:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
 
   postgres:
@@ -93,7 +97,64 @@ services:
       - ./airflow_logs:/opt/airflow/logs
     command: scheduler
 
+  # ------------------------------------------------------------------
+  # NEWLY DOCKERIZED SERVICES
+  # ------------------------------------------------------------------
+
+  producer:
+    build:
+      context: .
+      dockerfile: producer.Dockerfile
+    depends_on:
+      - kafka
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+    restart: unless-stopped
+    command: ["python", "producer.py"]
+
+  consumer:
+    build:
+      context: .
+      dockerfile: producer.Dockerfile
+    depends_on:
+      - kafka
+      - minio
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      MINIO_ENDPOINT: http://minio:9000
+    restart: unless-stopped
+    command: ["python", "simple_consumer.py"]
+
+  spark-stream:
+    build:
+      context: .
+      dockerfile: streaming.Dockerfile
+    depends_on:
+      - kafka
+      - postgres
+    environment:
+      KAFKA_BOOTSTRAP: kafka:29092
+      POSTGRES_HOST: postgres
+    restart: unless-stopped
+    # Caches downloaded Kafka/Postgres connector jars across container
+    # restarts, instead of re-downloading them from Maven every time.
+    volumes:
+      - spark_ivy_cache:/root/.ivy2
+
+  dashboard:
+    build:
+      context: .
+      dockerfile: dashboard.Dockerfile
+    depends_on:
+      - postgres
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
 volumes:
   pgdata:
   miniodata:
   airflow_pgdata:
+  spark_ivy_cache:

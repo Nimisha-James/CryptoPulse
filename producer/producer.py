@@ -3,8 +3,11 @@ import time
 import requests
 from kafka import KafkaProducer
 
+import os
+KAFKA_HOST = os.environ.get("KAFKA_BOOTSTRAP", "localhost:9092")
+
 producer = KafkaProducer(
-    bootstrap_servers='localhost:9092',
+    bootstrap_servers=KAFKA_HOST,
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
