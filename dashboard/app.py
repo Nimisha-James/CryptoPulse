@@ -279,7 +279,7 @@ header_col, pill_col, button_col = st.columns([8, 1.5, 1])
 with header_col:
     st.markdown(f"""
     <div class="dash-header">
-        <div class="dash-title">◈ CRYPTO<span>MARKET</span>INTEL</div>
+        <div class="dash-title">◈ Crypto<span> Pulse</span></div>
     </div>
     """, unsafe_allow_html=True)
 with pill_col:
