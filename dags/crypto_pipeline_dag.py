@@ -24,7 +24,7 @@ with DAG(
 
     load_staging = BashOperator(
         task_id="load_raw_to_staging",
-        bash_command="python /opt/airflow/dags/scripts/load_parquet_to_staging.py",
+        bash_command="python /opt/airflow/dags/scripts/load_parquet_to_staging.py {{ ds }}",
     )
 
     install_deps >> load_staging

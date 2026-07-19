@@ -20,7 +20,8 @@ consumer = KafkaConsumer(
     "crypto_prices",
     bootstrap_servers=KAFKA_HOST,
     value_deserializer=lambda v: json.loads(v.decode("utf-8")),
-    auto_offset_reset="earliest"
+    auto_offset_reset="earliest",
+    group_id="minio-archiver"
 )
 
 BUCKET = "crypto-raw"
@@ -37,12 +38,16 @@ def flush_to_parquet():
     if not buffer:
         return
     df = pd.DataFrame(buffer)
-    today = datetime.utcnow().strftime("%Y-%m-%d")
-    key = f"date={today}/batch_{datetime.utcnow().timestamp()}.parquet"
-    out_buffer = BytesIO()
-    df.to_parquet(out_buffer, index=False)
-    s3.put_object(Bucket=BUCKET, Key=key, Body=out_buffer.getvalue())
-    print(f"Flushed {len(buffer)} records to s3://{BUCKET}/{key}")
+    # Partition by each event's own timestamp, not "now" —
+    # so replayed/late data lands in its true historical folder,
+    # never silently mixed into today's partition.
+    df["event_date"] = pd.to_datetime(df["event_time"], unit="s").dt.strftime("%Y-%m-%d")
+    for event_date, group in df.groupby("event_date"):
+        key = f"date={event_date}/batch_{datetime.utcnow().timestamp()}.parquet"
+        out_buffer = BytesIO()
+        group.drop(columns=["event_date"]).to_parquet(out_buffer, index=False)
+        s3.put_object(Bucket=BUCKET, Key=key, Body=out_buffer.getvalue())
+        print(f"Flushed {len(group)} records to s3://{BUCKET}/{key}")
     buffer = []
 
 print("Consuming and writing to MinIO...")
