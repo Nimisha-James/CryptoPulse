@@ -1,0 +1,23 @@
+[2026-07-19T16:57:18.317+0000] {local_task_job_runner.py:120} INFO - ::group::Pre task execution logs
+[2026-07-19T16:57:18.330+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=non-requeueable deps ti=<TaskInstance: crypto_daily_pipeline.load_raw_to_staging manual__2026-07-19T16:57:16.725159+00:00 [queued]>
+[2026-07-19T16:57:18.337+0000] {taskinstance.py:2076} INFO - Dependencies all met for dep_context=requeueable deps ti=<TaskInstance: crypto_daily_pipeline.load_raw_to_staging manual__2026-07-19T16:57:16.725159+00:00 [queued]>
+[2026-07-19T16:57:18.338+0000] {taskinstance.py:2306} INFO - Starting attempt 1 of 3
+[2026-07-19T16:57:18.342+0000] {taskinstance.py:2330} INFO - Executing <Task(BashOperator): load_raw_to_staging> on 2026-07-19 16:57:16.725159+00:00
+[2026-07-19T16:57:18.346+0000] {logging_mixin.py:188} WARNING - /home/***/.local/lib/python3.12/site-packages/***/task/task_runner/standard_task_runner.py:62 DeprecationWarning: This process (pid=1191) is multi-threaded, use of fork() may lead to deadlocks in the child.
+[2026-07-19T16:57:18.346+0000] {standard_task_runner.py:90} INFO - Running: ['***', 'tasks', 'run', 'crypto_daily_pipeline', 'load_raw_to_staging', 'manual__2026-07-19T16:57:16.725159+00:00', '--job-id', '34', '--raw', '--subdir', 'DAGS_FOLDER/crypto_pipeline_dag.py', '--cfg-path', '/tmp/tmpwj_f_nwk']
+[2026-07-19T16:57:18.347+0000] {standard_task_runner.py:91} INFO - Job 34: Subtask load_raw_to_staging
+[2026-07-19T16:57:18.347+0000] {standard_task_runner.py:64} INFO - Started process 1192 to run task
+[2026-07-19T16:57:18.363+0000] {task_command.py:426} INFO - Running <TaskInstance: crypto_daily_pipeline.load_raw_to_staging manual__2026-07-19T16:57:16.725159+00:00 [running]> on host 9f6323b108d3
+[2026-07-19T16:57:18.389+0000] {taskinstance.py:2648} INFO - Exporting env vars: AIRFLOW_CTX_DAG_OWNER='data_eng' AIRFLOW_CTX_DAG_ID='crypto_daily_pipeline' AIRFLOW_CTX_TASK_ID='load_raw_to_staging' AIRFLOW_CTX_EXECUTION_DATE='2026-07-19T16:57:16.725159+00:00' AIRFLOW_CTX_TRY_NUMBER='1' AIRFLOW_CTX_DAG_RUN_ID='manual__2026-07-19T16:57:16.725159+00:00'
+[2026-07-19T16:57:18.390+0000] {taskinstance.py:430} INFO - ::endgroup::
+[2026-07-19T16:57:18.394+0000] {subprocess.py:63} INFO - Tmp dir root location: /tmp
+[2026-07-19T16:57:18.394+0000] {subprocess.py:75} INFO - Running command: ['/usr/bin/bash', '-c', 'python /opt/***/dags/scripts/load_parquet_to_staging.py 2026-07-19']
+[2026-07-19T16:57:18.397+0000] {subprocess.py:86} INFO - Output:
+[2026-07-19T16:57:20.004+0000] {subprocess.py:93} INFO - Found 1000 Parquet files for 2026-07-19
+[2026-07-19T16:57:20.006+0000] {subprocess.py:93} INFO - Loaded 5000 rows into raw_price_ticks
+[2026-07-19T16:57:20.048+0000] {subprocess.py:97} INFO - Command exited with return code 0
+[2026-07-19T16:57:20.049+0000] {taskinstance.py:441} INFO - ::group::Post task execution logs
+[2026-07-19T16:57:20.058+0000] {taskinstance.py:1206} INFO - Marking task as SUCCESS. dag_id=crypto_daily_pipeline, task_id=load_raw_to_staging, run_id=manual__2026-07-19T16:57:16.725159+00:00, execution_date=20260719T165716, start_date=20260719T165718, end_date=20260719T165720
+[2026-07-19T16:57:20.084+0000] {local_task_job_runner.py:243} INFO - Task exited with return code 0
+[2026-07-19T16:57:20.090+0000] {taskinstance.py:3503} INFO - 0 downstream tasks scheduled from follow-on schedule check
+[2026-07-19T16:57:20.091+0000] {local_task_job_runner.py:222} INFO - ::endgroup::

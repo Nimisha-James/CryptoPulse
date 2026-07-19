@@ -5,3 +5,5 @@ venv/
 .venv/
 data/
 passwords.txt
+airflow_logs/
+*.log
