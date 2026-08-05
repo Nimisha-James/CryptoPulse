@@ -147,13 +147,29 @@ services:
       dockerfile: dashboard.Dockerfile
     depends_on:
       - postgres
+      - agent-service
     environment:
       POSTGRES_HOST: postgres
+      AGENT_SERVICE_URL: http://agent-service:8000
     ports:
       - "8501:8501"
     restart: unless-stopped
     volumes:
       - ./dashboard/app.py:/app/app.py
+
+  agent-service:
+    build:
+      context: ./agent_service
+      dockerfile: Dockerfile
+    depends_on:
+      - postgres
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: postgres
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
 
 volumes:
   pgdata:

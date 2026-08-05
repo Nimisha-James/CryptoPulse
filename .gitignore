@@ -4,6 +4,7 @@ __pycache__/
 venv/
 .venv/
 data/
-passwords.txt
+documents/passwords.txt
 airflow_logs/
 *.log
+.env

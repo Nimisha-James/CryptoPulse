@@ -11,11 +11,15 @@ producer = KafkaProducer(
     value_serializer=lambda v: json.dumps(v).encode('utf-8')
 )
 
-COINS = ["BTCUSDT", "ETHUSDT", "SOLUSDT", "DOGEUSDT", "ADAUSDT"]
+COINS = [
+    "BTCUSDT", "ETHUSDT", "SOLUSDT", "DOGEUSDT", "ADAUSDT",
+    "XRPUSDT", "BNBUSDT", "AVAXUSDT", "LINKUSDT", "MATICUSDT",
+    "DOTUSDT", "LTCUSDT", "SHIBUSDT", "TRXUSDT", "UNIUSDT",
+]
 
 def fetch_prices():
     url = "https://api.binance.com/api/v3/ticker/24hr"
-    params = {"symbols": json.dumps(COINS, separators=(',', ':'))}    
+    params = {"symbols": json.dumps(COINS, separators=(',', ':'))}
     resp = requests.get(url, params=params, timeout=10)
     resp.raise_for_status()
     return resp.json()

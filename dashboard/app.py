@@ -6,14 +6,12 @@ import streamlit as st
 import pandas as pd
 import psycopg2
 import plotly.graph_objects as go
+import requests
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 import os
-from zoneinfo import ZoneInfo
-
-LOCAL_TZ = ZoneInfo("Asia/Kolkata")
-
 POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+AGENT_SERVICE_URL = os.environ.get("AGENT_SERVICE_URL", "http://localhost:8000")
 # ----------------------------------------------------------------------------
 # PAGE CONFIG
 # ----------------------------------------------------------------------------
@@ -227,6 +225,27 @@ div[data-testid="stHorizontalBlock"]:has(div[data-testid="stButton"]) > div {{
     display: flex !important;
     align-items: center !important;
 }}
+div[data-testid="stMultiSelect"] {{
+    font-family: 'JetBrains Mono', monospace;
+}}
+.briefing-box {{
+    background: {BG_PANEL};
+    border: 1px solid {BORDER};
+    border-left: 3px solid {ACCENT_CYAN};
+    border-radius: 6px;
+    padding: 1rem 1.2rem;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: {TEXT_PRIMARY};
+}}
+.briefing-meta {{
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.68rem;
+    color: {TEXT_MUTED};
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+}}
 </style>
 """, unsafe_allow_html=True)
 # ----------------------------------------------------------------------------
@@ -262,6 +281,11 @@ def load_recent_series(asset, limit=40):
     """
     df = pd.read_sql(query, conn, params=(asset, limit))
     return df.sort_values("window_start")
+@st.cache_data(ttl=60)
+def load_available_assets():
+    conn = get_connection()
+    query = "SELECT DISTINCT asset FROM live_metrics ORDER BY asset;"
+    return pd.read_sql(query, conn)["asset"].tolist()
 @st.cache_data(ttl=300)
 def load_daily_summary():
     conn = get_connection()
@@ -279,14 +303,14 @@ header_col, pill_col, button_col = st.columns([8, 1.5, 1])
 with header_col:
     st.markdown(f"""
     <div class="dash-header">
-        <div class="dash-title">◈ Crypto<span> Pulse</span></div>
+        <div class="dash-title">◈ CRYPTO<span>MARKET</span>INTEL</div>
     </div>
     """, unsafe_allow_html=True)
 with pill_col:
     st.markdown(f"""
     <div class="live-pill">
         <span class="pulse-dot"></span>
-        LIVE · {datetime.now(LOCAL_TZ).strftime('%H:%M:%S')}
+        LIVE · {datetime.now().strftime('%H:%M:%S')}
     </div>
     """, unsafe_allow_html=True)
 with button_col:
@@ -304,10 +328,24 @@ st.markdown(f"""
     unsafe_allow_html=True
 )
 # ----------------------------------------------------------------------------
+# ASSET SELECTOR
+# ----------------------------------------------------------------------------
+available_assets = load_available_assets()
+if available_assets:
+    selected_assets = st.multiselect(
+        "Assets to display",
+        options=available_assets,
+        default=available_assets[:5],
+    )
+else:
+    selected_assets = []
+# ----------------------------------------------------------------------------
 # LOAD DATA
 # ----------------------------------------------------------------------------
 try:
     latest = load_latest_metrics()
+    if selected_assets:
+        latest = latest[latest["asset"].isin(selected_assets)]
     daily = load_daily_summary()
     data_ok = True
 except Exception as e:
@@ -372,5 +410,31 @@ if data_ok and not latest.empty:
         )
     else:
         st.info("No daily summary yet — the Airflow + dbt pipeline hasn't completed a run.")
+
+    st.markdown('<div class="section-label">AI MARKET BRIEFING</div>', unsafe_allow_html=True)
+    briefing_col, gen_col = st.columns([5, 1])
+    with gen_col:
+        if st.button("Generate", use_container_width=True):
+            try:
+                requests.post(f"{AGENT_SERVICE_URL}/briefing", timeout=30)
+                st.rerun()
+            except Exception as e:
+                st.error(f"Agent service unreachable: {e}")
+    with briefing_col:
+        try:
+            resp = requests.get(f"{AGENT_SERVICE_URL}/briefing/latest", timeout=3)
+            if resp.status_code == 200:
+                data = resp.json()
+                st.markdown(f"""
+                <div class="briefing-box">
+                    <div class="briefing-meta">GENERATED {data['created_at']} · {data['anomaly_count']} ANOMALIES DETECTED</div>
+                    {data['briefing']}
+                </div>
+                """, unsafe_allow_html=True)
+            else:
+                st.caption("No briefing generated yet — click Generate.")
+        except Exception:
+            st.caption("Agent service not reachable.")
+
 elif data_ok and latest.empty:
     st.warning("Connected to Postgres, but `live_metrics` is empty. Make sure the producer and Spark job are running.")
