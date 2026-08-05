@@ -1,5 +1,5 @@
 """
-FastAPI service wrapping the LangGraph market intelligence agent.
+FastAPI service exposing the LangChain market intelligence agent.
 This is what makes the agent a real backend service, not just a script:
 a REST contract, response models, persistence, and independent deployability.
 """
@@ -9,20 +9,10 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import psycopg2
 
-from agent import build_graph
+from agent import run_agent
 
 app = FastAPI(title="Crypto Market Intelligence Agent", version="1.0")
 POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
-
-_graph = None  # built lazily on first request, not at import time
-
-
-def get_graph():
-    global _graph
-    if _graph is None:
-        _graph = build_graph()
-    return _graph
-
 
 def get_connection():
     return psycopg2.connect(
@@ -60,12 +50,11 @@ def startup():
 
 @app.post("/briefing", response_model=BriefingResponse)
 def generate_briefing():
-    """Runs the full LangGraph agent and persists the result."""
-    graph = get_graph()
+    """Runs the market intelligence agent and persists the result."""
+
     try:
-        result = graph.invoke({
-            "metrics_summary": "", "anomalies": [], "web_context": None, "briefing": ""
-        })
+        result = run_agent()
+
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent execution failed: {e}")
 

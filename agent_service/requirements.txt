@@ -8,3 +8,4 @@ duckduckgo-search
 psycopg2-binary
 pandas
 ddgs
+python-dotenv
