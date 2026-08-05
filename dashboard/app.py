@@ -508,4 +508,4 @@ if data_ok and not latest.empty:
             st.caption("No briefing generated yet — click Generate.")
 
 elif data_ok and latest.empty:
-    st.warning("Connected to Postgres, but `live_metrics` is empty. Make sure the producer and Spark job are running.")
+    st.warning("Connected to Postgres, but `live_metrics` is emptyy. Make sure the producer and Spark job are running.")
