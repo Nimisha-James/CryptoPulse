@@ -13,6 +13,7 @@ queries), and the LLM is called once at the end to synthesize the briefing.
 import os
 from langchain_groq import ChatGroq
 from langchain_community.tools import DuckDuckGoSearchRun
+from dotenv import load_dotenv
 
 from tools import (
     get_recent_metrics,
@@ -20,11 +21,7 @@ from tools import (
     detect_anomalies,
 )
 
-from dotenv import load_dotenv
-
 load_dotenv()
-
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 MODEL_NAME = os.environ.get("AGENT_MODEL", "llama-3.3-70b-versatile")
@@ -106,11 +103,19 @@ def run_agent():
     if not web_context:
         web_context = "No external context."
 
-    prompt = f"""
-You are a crypto market analyst.
+    prompt = f"""You are a market intelligence analyst. Write a short, punchy
+briefing as 2-4 bullet points in a professional analyst tone. Lead with the
+most important anomaly, not a general price rundown. Do not speculate
+beyond what the data and search context support.
 
-Write a concise professional briefing
-(2-4 bullet points).
+STRICT OUTPUT FORMAT — follow this exactly:
+- Output ONLY the bullet points. No heading, no intro sentence, no
+  "Here's the briefing" preamble, no closing remarks.
+- Each bullet must be a single line of plain text starting with "• "
+  (a bullet character followed by one space).
+- Do NOT use markdown syntax (no "-", "*", "**bold**", numbered lists).
+- Put exactly one blank line between bullets.
+- Each bullet should be one to two sentences, factual and specific.
 
 LIVE METRICS
 {metrics_summary}
@@ -126,10 +131,33 @@ WEB CONTEXT
 
     response = llm.invoke(prompt)
 
+    briefing_text = format_briefing(response.content)
+
     return {
-        "briefing": response.content,
+        "briefing": briefing_text,
         "anomalies": anomalies
     }
+
+
+def format_briefing(raw_text: str) -> str:
+    """
+    Normalizes whatever the LLM returned into a clean, consistent bullet
+    format: one "• " bullet per line, exactly one blank line between
+    bullets, no stray markdown or preamble lines that slipped through.
+    This is what gets stored in the DB and rendered on the dashboard, so
+    it needs to be predictable regardless of minor LLM formatting drift.
+    """
+    lines = [line.strip() for line in raw_text.strip().splitlines() if line.strip()]
+
+    bullets = []
+    for line in lines:
+        # Strip any markdown bullet/number prefixes the model might still emit
+        # despite the instructions, then re-apply a single consistent prefix.
+        cleaned = line.lstrip("•-*0123456789. ").strip()
+        if cleaned:
+            bullets.append(cleaned)
+
+    return "\n\n".join(f"• {b}" for b in bullets)
 
 
 if __name__ == "__main__":

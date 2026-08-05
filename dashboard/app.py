@@ -8,10 +8,14 @@ import psycopg2
 import plotly.graph_objects as go
 import requests
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from streamlit_autorefresh import st_autorefresh
 import os
+
 POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
 AGENT_SERVICE_URL = os.environ.get("AGENT_SERVICE_URL", "http://localhost:8000")
+IST = ZoneInfo("Asia/Kolkata")
+
 # ----------------------------------------------------------------------------
 # PAGE CONFIG
 # ----------------------------------------------------------------------------
@@ -22,6 +26,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 st_autorefresh(interval=5000, key="auto_refresh_tick")
+
 # ----------------------------------------------------------------------------
 # DESIGN TOKENS
 # ----------------------------------------------------------------------------
@@ -35,6 +40,7 @@ ACCENT_CYAN  = "#4FD1E8"
 ACCENT_GREEN = "#00E5A0"
 ACCENT_RED   = "#FF5470"
 ACCENT_AMBER = "#FFB454"
+
 # ----------------------------------------------------------------------------
 # GLOBAL CSS
 # ----------------------------------------------------------------------------
@@ -246,8 +252,29 @@ div[data-testid="stMultiSelect"] {{
     margin-bottom: 0.5rem;
     letter-spacing: 0.05em;
 }}
+.briefing-box ul {{
+    list-style: none;
+    margin: 0;
+    padding-left: 0;
+}}
+.briefing-box li {{
+    position: relative;
+    padding-left: 1.1rem;
+    margin-bottom: 0.6rem;
+}}
+.briefing-box li:last-child {{
+    margin-bottom: 0;
+}}
+.briefing-box li::before {{
+    content: "•";
+    position: absolute;
+    left: 0;
+    color: {ACCENT_CYAN};
+}}
 </style>
 """, unsafe_allow_html=True)
+
+
 # ----------------------------------------------------------------------------
 # DB CONNECTION
 # ----------------------------------------------------------------------------
@@ -259,6 +286,8 @@ def get_connection():
     )
     conn.autocommit = True
     return conn
+
+
 @st.cache_data(ttl=10)
 def load_latest_metrics():
     conn = get_connection()
@@ -269,6 +298,8 @@ def load_latest_metrics():
         ORDER BY asset, window_start DESC, window_end DESC;
     """
     return pd.read_sql(query, conn)
+
+
 @st.cache_data(ttl=10)
 def load_recent_series(asset, limit=40):
     conn = get_connection()
@@ -281,11 +312,15 @@ def load_recent_series(asset, limit=40):
     """
     df = pd.read_sql(query, conn, params=(asset, limit))
     return df.sort_values("window_start")
+
+
 @st.cache_data(ttl=60)
 def load_available_assets():
     conn = get_connection()
     query = "SELECT DISTINCT asset FROM live_metrics ORDER BY asset;"
     return pd.read_sql(query, conn)["asset"].tolist()
+
+
 @st.cache_data(ttl=300)
 def load_daily_summary():
     conn = get_connection()
@@ -296,27 +331,49 @@ def load_daily_summary():
         ORDER BY event_date DESC, asset_id ASC;
     """
     return pd.read_sql(query, conn)
+
+
+def render_bullets_html(text: str) -> str:
+    """
+    Converts the agent's '• bullet\\n\\n• bullet' plain text into properly
+    spaced HTML list items for display inside the briefing-box div. Raw
+    newlines are ignored by HTML, so this is what actually produces visible
+    spacing between bullets in the browser.
+    """
+    if not text:
+        return "<p>No briefing text returned.</p>"
+    bullets = [b.strip().lstrip("•").strip() for b in text.split("\n\n") if b.strip()]
+    if not bullets:
+        return "<p>No briefing text returned.</p>"
+    items = "".join(f"<li>{b}</li>" for b in bullets)
+    return f"<ul>{items}</ul>"
+
+
 # ----------------------------------------------------------------------------
 # HEADER
 # ----------------------------------------------------------------------------
 header_col, pill_col, button_col = st.columns([8, 1.5, 1])
+
 with header_col:
     st.markdown(f"""
     <div class="dash-header">
         <div class="dash-title">◈ CRYPTO<span>MARKET</span>INTEL</div>
     </div>
     """, unsafe_allow_html=True)
+
 with pill_col:
     st.markdown(f"""
     <div class="live-pill">
         <span class="pulse-dot"></span>
-        LIVE · {datetime.now().strftime('%H:%M:%S')}
+        LIVE · {datetime.now(IST).strftime('%H:%M:%S')}
     </div>
     """, unsafe_allow_html=True)
+
 with button_col:
     if st.button("⟳ Refresh", use_container_width=True):
         st.cache_data.clear()
         st.rerun()
+
 st.markdown(f"""
     <hr style="
         border: none;
@@ -327,6 +384,7 @@ st.markdown(f"""
     """,
     unsafe_allow_html=True
 )
+
 # ----------------------------------------------------------------------------
 # ASSET SELECTOR
 # ----------------------------------------------------------------------------
@@ -339,6 +397,7 @@ if available_assets:
     )
 else:
     selected_assets = []
+
 # ----------------------------------------------------------------------------
 # LOAD DATA
 # ----------------------------------------------------------------------------
@@ -352,6 +411,7 @@ except Exception as e:
     data_ok = False
     get_connection.clear()  # drop the poisoned connection; next rerun reconnects fresh
     st.error(f"Could not reach the database — reconnecting automatically. ({e})")
+
 if data_ok and not latest.empty:
     st.markdown('<div class="section-label">LIVE · 5-MIN ROLLING METRICS</div>', unsafe_allow_html=True)
     cols = st.columns(len(latest))
@@ -370,6 +430,7 @@ if data_ok and not latest.empty:
                 <div class="asset-vol">VOLATILITY&nbsp;<b class="{vol_class}">{vol_display}</b></div>
             </div>
             """, unsafe_allow_html=True)
+
     st.markdown('<div class="section-label">PRICE TREND · LAST WINDOWS</div>', unsafe_allow_html=True)
     chart_cols = st.columns(len(latest))
     for i, (_, row) in enumerate(latest.iterrows()):
@@ -396,6 +457,7 @@ if data_ok and not latest.empty:
                 showlegend=False,
             )
             st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+
     st.markdown('<div class="section-label">HISTORICAL · DAILY OHLC (dbt)</div>', unsafe_allow_html=True)
     if not daily.empty:
         styled = daily.copy()
@@ -413,28 +475,37 @@ if data_ok and not latest.empty:
 
     st.markdown('<div class="section-label">AI MARKET BRIEFING</div>', unsafe_allow_html=True)
     briefing_col, gen_col = st.columns([5, 1])
+
     with gen_col:
         if st.button("Generate", use_container_width=True):
             try:
                 requests.post(f"{AGENT_SERVICE_URL}/briefing", timeout=30)
+                st.session_state["briefing_generated"] = True
                 st.rerun()
             except Exception as e:
                 st.error(f"Agent service unreachable: {e}")
+
     with briefing_col:
-        try:
-            resp = requests.get(f"{AGENT_SERVICE_URL}/briefing/latest", timeout=3)
-            if resp.status_code == 200:
-                data = resp.json()
-                st.markdown(f"""
-                <div class="briefing-box">
-                    <div class="briefing-meta">GENERATED {data['created_at']} · {data['anomaly_count']} ANOMALIES DETECTED</div>
-                    {data['briefing']}
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.caption("No briefing generated yet — click Generate.")
-        except Exception:
-            st.caption("Agent service not reachable.")
+        if st.session_state.get("briefing_generated"):
+            try:
+                resp = requests.get(f"{AGENT_SERVICE_URL}/briefing/latest", timeout=3)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    created_utc = datetime.fromisoformat(data['created_at'])
+                    created_ist = created_utc.astimezone(IST)
+                    bullets_html = render_bullets_html(data['briefing'])
+                    st.markdown(f"""
+                    <div class="briefing-box">
+                        <div class="briefing-meta">GENERATED {created_ist.strftime('%Y-%m-%d %H:%M:%S')} IST · {data['anomaly_count']} ANOMALIES DETECTED</div>
+                        {bullets_html}
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.caption("No briefing generated yet — click Generate.")
+            except Exception:
+                st.caption("Agent service not reachable.")
+        else:
+            st.caption("No briefing generated yet — click Generate.")
 
 elif data_ok and latest.empty:
     st.warning("Connected to Postgres, but `live_metrics` is empty. Make sure the producer and Spark job are running.")
