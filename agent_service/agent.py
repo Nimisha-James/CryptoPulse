@@ -83,7 +83,7 @@ def synthesize_node(state: AgentState) -> AgentState:
     context_text = state.get("web_context") or "No external context was needed."
 
     prompt = f"""You are a market intelligence analyst. Write a short, punchy
-briefing (2-4 sentences) in a professional analyst tone. Lead with the
+briefing (2-4 sentences) as points in a professional analyst tone. Lead with the
 most important anomaly, not a general price rundown. Do not speculate
 beyond what the data and search context support...
 
