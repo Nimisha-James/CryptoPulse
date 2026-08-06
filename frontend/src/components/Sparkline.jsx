@@ -9,7 +9,7 @@ export default function Sparkline({ asset, refreshKey }) {
     let cancelled = false
     api.getSeries(asset).then((data) => {
       if (!cancelled) setSeries(data)
-    }).catch(() => {})
+    }).catch(() => { })
     return () => { cancelled = true }
   }, [asset, refreshKey])
 
