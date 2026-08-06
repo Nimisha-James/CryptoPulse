@@ -1,0 +1,338 @@
+:root {
+  --bg-primary: #0A0E14;
+  --bg-panel: #10151C;
+  --border: #1E2630;
+  --text-primary: #E6E9EF;
+  --text-muted: #6B7684;
+  --accent-cyan: #4FD1E8;
+  --accent-green: #00E5A0;
+  --accent-red: #FF5470;
+  --accent-amber: #FFB454;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: 'Inter', sans-serif;
+  background:
+    radial-gradient(circle at 15% 0%, rgba(79, 209, 232, 0.06) 0%, transparent 40%),
+    radial-gradient(circle at 85% 100%, rgba(0, 229, 160, 0.05) 0%, transparent 40%),
+    linear-gradient(180deg, var(--bg-primary) 0%, #0C1119 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+}
+
+.container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem 3rem;
+}
+
+/* ---------- Header ---------- */
+.header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 1.1rem;
+  margin-bottom: 1.2rem;
+}
+
+.title {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin: 0;
+}
+
+.title span {
+  color: var(--accent-cyan);
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+
+.live-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: 38px;
+  box-sizing: border-box;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 0.9rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--accent-green);
+  letter-spacing: 0.08em;
+  white-space: nowrap;
+}
+
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--accent-green);
+  animation: pulse 1.8s infinite;
+  flex-shrink: 0;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 229, 160, 0.55);
+  }
+
+  70% {
+    box-shadow: 0 0 0 8px rgba(0, 229, 160, 0);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 229, 160, 0);
+  }
+}
+
+.btn {
+  height: 38px;
+  box-sizing: border-box;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--accent-cyan);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  padding: 0 1rem;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.btn:hover {
+  border-color: var(--accent-cyan);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ---------- Section labels ---------- */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--accent-cyan);
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  margin: 1.8rem 0 0.7rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.section-label::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ---------- Asset selector ---------- */
+.asset-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.asset-chip {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  color: var(--text-muted);
+  cursor: pointer;
+  letter-spacing: 0.04em;
+  transition: all 0.15s ease;
+}
+
+.asset-chip.active {
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+  background: rgba(79, 209, 232, 0.08);
+}
+
+/* ---------- Cards grid ---------- */
+.cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.asset-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1.05rem 1.15rem;
+  transition: border-color 0.2s ease;
+}
+
+.asset-card:hover {
+  border-color: rgba(79, 209, 232, 0.27);
+}
+
+.asset-name {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.vol-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.vol-dot.calm {
+  background: var(--accent-green);
+}
+
+.vol-dot.moving {
+  background: var(--accent-red);
+  box-shadow: 0 0 6px rgba(255, 84, 112, 0.4);
+}
+
+.asset-price {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0.2rem 0 0.3rem 0;
+}
+
+.asset-vol {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+
+.asset-vol b.calm {
+  color: var(--accent-green);
+}
+
+.asset-vol b.moving {
+  color: var(--accent-red);
+}
+
+.sparkline-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.5rem;
+  height: 110px;
+}
+
+/* ---------- Table ---------- */
+.table-wrap {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+th,
+td {
+  padding: 0.6rem 1rem;
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+th:first-child,
+td:first-child,
+th:nth-child(2),
+td:nth-child(2) {
+  text-align: left;
+}
+
+th {
+  color: var(--text-muted);
+  font-weight: 500;
+  background: #10151C;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+/* ---------- Briefing ---------- */
+.briefing-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent-cyan);
+  border-radius: 6px;
+  padding: 1rem 1.2rem;
+}
+
+.briefing-meta {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  color: var(--text-muted);
+  margin-bottom: 0.6rem;
+  letter-spacing: 0.05em;
+}
+
+.briefing-box ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.briefing-box li {
+  margin-bottom: 0.5rem;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.briefing-box li:last-child {
+  margin-bottom: 0;
+}
+
+.muted-text {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.error-box {
+  background: rgba(255, 84, 112, 0.08);
+  border: 1px solid rgba(255, 84, 112, 0.3);
+  border-radius: 6px;
+  padding: 0.9rem 1.1rem;
+  color: var(--accent-red);
+  font-size: 0.85rem;
+}

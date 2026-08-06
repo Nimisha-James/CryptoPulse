@@ -110,7 +110,7 @@ services:
     environment:
       KAFKA_BOOTSTRAP: kafka:29092
     restart: unless-stopped
-    command: ["python", "producer.py"]
+    command: [ "python", "producer.py" ]
 
   consumer:
     build:
@@ -123,7 +123,7 @@ services:
       KAFKA_BOOTSTRAP: kafka:29092
       MINIO_ENDPOINT: http://minio:9000
     restart: unless-stopped
-    command: ["python", "simple_consumer.py"]
+    command: [ "python", "simple_consumer.py" ]
 
   spark-stream:
     build:
@@ -141,21 +141,28 @@ services:
     volumes:
       - spark_ivy_cache:/root/.ivy2
 
-  dashboard:
+  dashboard-api:
     build:
-      context: .
-      dockerfile: dashboard.Dockerfile
+      context: ./dashboard_api
+      dockerfile: Dockerfile
     depends_on:
       - postgres
-      - agent-service
     environment:
       POSTGRES_HOST: postgres
-      AGENT_SERVICE_URL: http://agent-service:8000
     ports:
-      - "8501:8501"
+      - "8001:8001"
     restart: unless-stopped
-    volumes:
-      - ./dashboard/app.py:/app/app.py
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    depends_on:
+      - dashboard-api
+      - agent-service
+    ports:
+      - "3000:80"
+    restart: unless-stopped
 
   agent-service:
     build:

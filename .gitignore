@@ -8,3 +8,4 @@ documents/passwords.txt
 airflow_logs/
 *.log
 .env
+node_modules/

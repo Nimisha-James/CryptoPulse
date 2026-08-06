@@ -1,0 +1,22 @@
+Context to catch you up: work done on the crypto-pipeline project's AI agent layer
+
+I've been building an AI-powered market intelligence layer on top of my existing crypto data pipeline (Kafka → Spark → Postgres → dbt → Airflow). Here's everything that changed in this session:
+
+1. Refactored the agent from LangGraph to a plain function so now only Langchain is present for summary generation. The agent (agent_service/agent.py) originally used LangGraph's StateGraph with nodes for fetch → conditional web-search → synthesize. I verified the conditional routing worked correctly (a real BTCUSDT volatility spike triggered the search branch and produced a grounded, non-speculative briefing), then deliberately simplified it to a single plain Python function with an if statement, since a single conditional branch didn't justify the state-machine library's overhead.
+
+2. Fixed two real dependency/config bugs:
+
+GROQ_API_KEY wasn't loading from .env because nothing in the codebase called load_dotenv() — a .env file on disk doesn't populate os.environ on its own. Fixed by adding explicit load_dotenv() calls at entry points.
+DuckDuckGoSearchRun failed because its underlying package was renamed upstream from duckduckgo-search to ddgs. Fixed by adding ddgs explicitly to requirements.txt.
+
+3. Rewrote the LLM prompt with a strict output-format contract — plain •  bullets, no markdown, exactly one blank line between bullets, no preamble — plus a format_briefing() normalization function that re-parses whatever the model returns into a guaranteed-consistent format before storing it. This was needed because the Streamlit dashboard embeds the briefing inside raw HTML, where markdown syntax isn't interpreted and newlines are ignored, so spacing has to be expressed as real <li> elements.
+
+4. Fixed the dashboard (dashboard/app.py):
+
+Briefing generation is now strictly gated behind the "Generate" button using st.session_state, so it never appears or regenerates just from the 5-second autorefresh (autorefresh only re-reads the live metrics and the last saved briefing via a GET, never triggers a new LLM call).
+The live clock and "GENERATED" timestamp now correctly show IST (zoneinfo("Asia/Kolkata")) instead of naive local time; timestamps are stored in UTC and converted only at display time.
+Added a render_bullets_html() helper to convert the agent's normalized bullet text into real HTML list items.
+
+5. Debugged unexplained Groq API usage growth. Traced it systematically (confirmed the button gate was correct in code, grepped the whole repo to confirm only one call site existed, then checked lsof -i :8000) and discovered a forgotten, independently-running Docker Compose stack (Kafka, Airflow, Postgres, agent-service, dashboard, etc.) had been serving all real traffic the whole time, while local terminal testing was hitting nothing. Confirmed via docker ps — an 11-container stack including an hour-old Airflow scheduler.
+
+6. Containerized the agent-service and dashboard into the existing Docker Compose stack, alongside Kafka/Spark/Airflow/Postgres/MinIO, so docker compose up -d --build builds/starts the whole system as one unit. Gave standard docker compose commands for start/stop/rebuild/logs.
