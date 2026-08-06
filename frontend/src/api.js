@@ -18,5 +18,10 @@ export const api = {
   getDailySummary: () => getJSON(`${DASHBOARD_API}/daily-summary`),
 
   getLatestBriefing: () => getJSON(`${AGENT_API}/briefing/latest`),
-  generateBriefing: () => getJSON(`${AGENT_API}/briefing`, { method: "POST" }),
+  generateBriefing: (assets) =>
+    getJSON(`${AGENT_API}/briefing`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ assets: assets && assets.length ? assets : null }),
+    }),
 };

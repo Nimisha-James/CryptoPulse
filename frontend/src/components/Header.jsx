@@ -21,7 +21,7 @@ export default function Header({ onRefresh, refreshing }) {
   const time = useISTClock()
   return (
     <div className="header-row">
-      <h1 className="title">◈ CRYPTO<span>MARKET</span>INTEL</h1>
+      <h1 className="title">◈ Crypto<span>Pulse</span></h1>
       <div className="header-controls">
         <div className="live-pill">
           <span className="pulse-dot"></span>

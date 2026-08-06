@@ -72,7 +72,7 @@ export default function App() {
       <div className="section-label">ASSETS</div>
       <AssetSelector allAssets={allAssets} selected={selected} onToggle={toggleAsset} />
 
-      <BriefingPanel />
+      <BriefingPanel selectedAssets={selected} />
 
       <div className="section-label">LIVE · 5-MIN ROLLING METRICS</div>
       <div className="cards-grid">

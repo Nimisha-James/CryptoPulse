@@ -22,31 +22,55 @@ def get_connection():
     )
 
 
-def get_recent_metrics(limit_per_asset: int = 10) -> pd.DataFrame:
-    """Pulls the most recent rolling-window rows per asset from live_metrics."""
+def get_recent_metrics(limit_per_asset: int = 10, assets: list[str] | None = None) -> pd.DataFrame:
+    """Pulls the most recent rolling-window rows per asset from live_metrics.
+    If `assets` is given, restricts to only those assets — this is what
+    makes the agent's briefing respect the dashboard's asset selection
+    instead of always analyzing the entire tracked universe."""
     conn = get_connection()
-    query = """
-        SELECT asset, avg_price, volatility, window_start, window_end
-        FROM live_metrics
-        ORDER BY window_start DESC
-        LIMIT 500;
-    """
-    df = pd.read_sql(query, conn)
+    if assets:
+        query = """
+            SELECT asset, avg_price, volatility, window_start, window_end
+            FROM live_metrics
+            WHERE asset = ANY(%s)
+            ORDER BY window_start DESC
+            LIMIT 500;
+        """
+        df = pd.read_sql(query, conn, params=(assets,))
+    else:
+        query = """
+            SELECT asset, avg_price, volatility, window_start, window_end
+            FROM live_metrics
+            ORDER BY window_start DESC
+            LIMIT 500;
+        """
+        df = pd.read_sql(query, conn)
     conn.close()
-    # keep only the most recent N rows per asset
+    if df.empty:
+        return df
     return df.sort_values("window_start", ascending=False).groupby("asset").head(limit_per_asset)
 
 
-def get_daily_summary() -> pd.DataFrame:
-    """Pulls the most recent day's OHLC summary per asset."""
+def get_daily_summary(assets: list[str] | None = None) -> pd.DataFrame:
+    """Pulls the most recent day's OHLC summary per asset, optionally filtered."""
     conn = get_connection()
-    query = """
-        SELECT asset_id, event_date, open_price, high_price, low_price, close_price, total_volume
-        FROM daily_ohlc_summary
-        ORDER BY event_date DESC
-        LIMIT 100;
-    """
-    df = pd.read_sql(query, conn)
+    if assets:
+        query = """
+            SELECT asset_id, event_date, open_price, high_price, low_price, close_price, total_volume
+            FROM daily_ohlc_summary
+            WHERE asset_id = ANY(%s)
+            ORDER BY event_date DESC
+            LIMIT 100;
+        """
+        df = pd.read_sql(query, conn, params=(assets,))
+    else:
+        query = """
+            SELECT asset_id, event_date, open_price, high_price, low_price, close_price, total_volume
+            FROM daily_ohlc_summary
+            ORDER BY event_date DESC
+            LIMIT 100;
+        """
+        df = pd.read_sql(query, conn)
     conn.close()
     return df
 

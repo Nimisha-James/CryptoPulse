@@ -124,6 +124,16 @@ body {
   cursor: default;
 }
 
+.btn-wide {
+  width: 20%;
+  height: 44px;
+  font-size: 0.85rem;
+  margin: 1rem auto 0;
+  display: block;
+  border-radius: 8px;
+
+}
+
 /* ---------- Section labels ---------- */
 .section-label {
   font-family: 'JetBrains Mono', monospace;

@@ -1,18 +1,27 @@
 """
 FastAPI service exposing the LangChain market intelligence agent.
-This is what makes the agent a real backend service, not just a script:
-a REST contract, response models, persistence, and independent deployability.
 """
 import os
 from datetime import datetime, timezone
+from typing import Optional
 from fastapi import FastAPI, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import psycopg2
 
 from agent import run_agent
 
 app = FastAPI(title="Crypto Market Intelligence Agent", version="1.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 POSTGRES_HOST = os.environ.get("POSTGRES_HOST", "localhost")
+
 
 def get_connection():
     return psycopg2.connect(
@@ -37,6 +46,12 @@ def ensure_table():
     conn.close()
 
 
+class BriefingRequest(BaseModel):
+    # Empty/omitted list means "all assets" -- preserves the old behavior
+    # for anyone calling this endpoint without specifying a scope.
+    assets: Optional[list[str]] = None
+
+
 class BriefingResponse(BaseModel):
     created_at: datetime
     anomaly_count: int
@@ -49,12 +64,11 @@ def startup():
 
 
 @app.post("/briefing", response_model=BriefingResponse)
-def generate_briefing():
-    """Runs the market intelligence agent and persists the result."""
-
+def generate_briefing(request: BriefingRequest = BriefingRequest()):
+    """Runs the market intelligence agent, scoped to the given assets
+    (or all tracked assets if none were specified), and persists the result."""
     try:
-        result = run_agent()
-
+        result = run_agent(assets=request.assets)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent execution failed: {e}")
 
@@ -78,7 +92,6 @@ def generate_briefing():
 
 @app.get("/briefing/latest", response_model=BriefingResponse)
 def latest_briefing():
-    """Lets the dashboard fetch the most recent briefing without re-running the agent."""
     conn = get_connection()
     cur = conn.cursor()
     cur.execute(
