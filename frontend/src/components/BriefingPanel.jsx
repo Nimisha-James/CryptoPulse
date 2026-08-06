@@ -44,23 +44,25 @@ export default function BriefingPanel() {
   return (
     <>
       <div className="section-label">AI MARKET BRIEFING</div>
-      <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-        <div style={{ flex: 1 }}>
-          {error && <div className="error-box">Agent service error: {error}</div>}
-          {!error && briefing && (
-            <div className="briefing-box">
-              <div className="briefing-meta">
-                GENERATED {formatIST(briefing.created_at)} IST · {briefing.anomaly_count} ANOMALIES DETECTED
-              </div>
-              <ul>
-                {renderBullets(briefing.briefing).map((b, i) => <li key={i}>{b}</li>)}
-              </ul>
-            </div>
-          )}
-          {!error && !briefing && (
-            <p className="muted-text">No briefing generated yet — click Generate.</p>
-          )}
+
+      {error && <div className="error-box">Agent service error: {error}</div>}
+
+      {!error && briefing && (
+        <div className="briefing-box">
+          <div className="briefing-meta">
+            GENERATED {formatIST(briefing.created_at)} IST · {briefing.anomaly_count} ANOMALIES DETECTED
+          </div>
+          <ul>
+            {renderBullets(briefing.briefing).map((b, i) => <li key={i}>{b}</li>)}
+          </ul>
         </div>
+      )}
+
+      {!error && !briefing && (
+        <p className="muted-text">No briefing generated yet — click Generate.</p>
+      )}
+
+      <div style={{ display: 'flex', justifyContent: 'center', marginTop: '1rem' }}>
         <button className="btn" onClick={handleGenerate} disabled={loading}>
           {loading ? 'Generating…' : 'Generate'}
         </button>

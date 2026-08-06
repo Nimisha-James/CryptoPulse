@@ -72,6 +72,8 @@ export default function App() {
       <div className="section-label">ASSETS</div>
       <AssetSelector allAssets={allAssets} selected={selected} onToggle={toggleAsset} />
 
+      <BriefingPanel />
+
       <div className="section-label">LIVE · 5-MIN ROLLING METRICS</div>
       <div className="cards-grid">
         {filteredMetrics.map((m) => <AssetCard key={m.asset} metric={m} />)}
@@ -83,8 +85,6 @@ export default function App() {
           <Sparkline key={m.asset} asset={m.asset} refreshKey={tick} />
         ))}
       </div>
-
-      <BriefingPanel />
 
       <div className="section-label">HISTORICAL · DAILY OHLC (DBT)</div>
       <OHLCTable rows={dailySummary} />
