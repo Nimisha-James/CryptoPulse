@@ -29,13 +29,19 @@ export default function Sparkline({ asset, refreshKey }) {
     <div className="sparkline-card">
       <ResponsiveContainer width="100%" height="100%">
         <AreaChart data={series}>
+          <defs>
+            <linearGradient id={`spark-${asset}`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#3f5cf5" stopOpacity={0.28} />
+              <stop offset="100%" stopColor="#3f5cf5" stopOpacity={0.02} />
+            </linearGradient>
+          </defs>
           <YAxis domain={[min - pad, max + pad]} hide />
           <Area
             type="monotone"
             dataKey="avg_price"
-            stroke="#4FD1E8"
+            stroke="#3f5cf5"
             strokeWidth={2}
-            fill="rgba(79,209,232,0.08)"
+            fill={`url(#spark-${asset})`}
           />
         </AreaChart>
       </ResponsiveContainer>
