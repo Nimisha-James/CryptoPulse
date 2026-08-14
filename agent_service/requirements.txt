@@ -2,7 +2,7 @@ fastapi
 uvicorn[standard]
 langgraph
 langchain
-langchain-groq
+langchain-anthropic
 langchain-community
 duckduckgo-search
 psycopg2-binary
