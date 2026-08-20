@@ -1,3 +1,6 @@
+# Superseded by ../producer-go — the `producer` service in docker-compose.yml
+# now builds and runs that Go rewrite instead of this file. Kept here for
+# reference; not built or run by the compose stack anymore.
 import json
 import time
 import requests

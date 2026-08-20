@@ -9,7 +9,7 @@ detected first, web search only runs if anomalies were found (capped at 2
 queries), and the LLM is called once at the end to synthesize the briefing.
 """
 import os
-from langchain_groq import ChatGroq
+from langchain_anthropic import ChatAnthropic
 from langchain_community.tools import DuckDuckGoSearchRun
 from dotenv import load_dotenv
 from tools import (
@@ -18,16 +18,16 @@ from tools import (
     detect_anomalies,
 )
 load_dotenv()
-GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
-MODEL_NAME = os.environ.get("AGENT_MODEL", "llama-3.3-70b-versatile")
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+MODEL_NAME = os.environ.get("AGENT_MODEL", "claude-sonnet-4-5")  # pick the model id your account has access to
 
 
 def get_llm():
-    if not GROQ_API_KEY:
-        raise RuntimeError("GROQ_API_KEY is not set — export it or add it to .env")
-    return ChatGroq(
+    if not ANTHROPIC_API_KEY:
+        raise RuntimeError("ANTHROPIC_API_KEY is not set — export it or add it to .env")
+    return ChatAnthropic(
         model=MODEL_NAME,
-        api_key=GROQ_API_KEY,
+        api_key=ANTHROPIC_API_KEY,
         temperature=0.3
     )
 

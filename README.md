@@ -7,7 +7,7 @@ The entire stack — ingestion, streaming, storage, orchestration, transformatio
 
 ## Features
 
-- **Live Ingestion**: Continuously polls the Binance public market data API every 10 seconds and streams events through Kafka.
+- **Live Ingestion**: A Go producer runs one goroutine per tracked asset, each independently polling the Binance public market data API every 10 seconds and streaming events through Kafka.
 - **Real-Time Metrics**: Spark Structured Streaming computes rolling average price and volatility over a 5-minute sliding window, with watermarking to correctly handle late-arriving data.
 - **Durable Historical Archive**: Every raw event is preserved as date-partitioned Parquet files in MinIO (S3-compatible object storage), independent of any downstream transformation.
 - **Automated Daily Orchestration**: Airflow loads archived data into the warehouse on a scheduled, retry-aware, dependency-managed DAG.
@@ -18,7 +18,7 @@ The entire stack — ingestion, streaming, storage, orchestration, transformatio
 ## Architecture
 
 ```
-Binance API ──(poll every 10s)──▶ Kafka topic
+Binance API ──(15 concurrent goroutines, 10s poll each)──▶ Kafka topic
                                       │
                         ┌─────────────┴─────────────┐
                         ▼                            ▼
@@ -61,12 +61,12 @@ Everything — ingestion, streaming, archival, orchestration, transformation, an
 | Database | PostgreSQL |
 | Dashboard | Streamlit |
 | Containerization | Docker Compose (12+ services) |
-| Language | Python, SQL |
+| Language | Go, Python, SQL |
 
 ## Methodology
 
 ### 1. Ingestion
-A continuously running producer polls Binance's public ticker API every 10 seconds and publishes each price observation to a Kafka topic, decoupling ingestion from every downstream consumer.
+The producer (Go — see `producer-go/`) runs one goroutine per tracked asset, each independently polling Binance's public ticker API every 10 seconds and publishing its own price observation to a Kafka topic. A slow or failing response for one asset never blocks or delays the others, and every stream shares a single Kafka writer. This decouples ingestion from every downstream consumer.
 
 ### 2. Real-Time Stream Processing
 A Spark Structured Streaming job reads directly from Kafka and computes two rolling metrics per asset — average price and volatility (standard deviation) — over a 5-minute sliding window, recalculated every minute. Watermarking allows events arriving up to 2 minutes late to still be correctly included.
